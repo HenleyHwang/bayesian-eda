@@ -1,0 +1,5 @@
+# Data files
+*.mat
+
+# Python cache
+*.pyc

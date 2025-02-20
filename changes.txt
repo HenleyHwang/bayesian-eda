@@ -1,0 +1,5 @@
+changed lambda init
+indexing (x[0], u[-1], Q[-])
+irls lambda squared norm
+square root of Q
+3d Model
