@@ -91,6 +91,8 @@ class BayesianEDA:
 
         # Initialization phase
         for _ in range(self.max_iter_init):
+            u = np.ones_like(u)  # Fixed input for initialization
+
             # E-step: Estimate states and inputs with IRLS
             for i in range(self.irls_max_iter):
                 self.iteration_irls = i  # For input refinement
@@ -101,7 +103,7 @@ class BayesianEDA:
                 Q = self.approximate_input_covariance(u, Bd, lambda_)
 
             # M-step: Optimize parameters
-            theta = self.maximize_likelihood(theta, x, y, np.ones_like(u), P)  # Fixed input for initialization
+            theta = self.maximize_likelihood(theta, x, y, u, P)
             Ad, Bd, Cd, _ = self.model.discretize(dt=y.dt, theta=theta)
 
             self.log(theta, x, u)
