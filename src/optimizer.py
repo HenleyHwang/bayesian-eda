@@ -91,8 +91,6 @@ class BayesianEDA:
 
         # Initialization phase
         for _ in range(self.max_iter_init):
-            u = np.ones_like(u)  # Fixed input for initialization
-
             # E-step: Estimate states and inputs with IRLS
             for i in range(self.irls_max_iter):
                 self.iteration_irls = i  # For input refinement
