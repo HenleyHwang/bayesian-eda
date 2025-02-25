@@ -328,7 +328,7 @@ class BayesianEDA:
             E = np.diagonal(U.T @ np.einsum("i,j->ij", Du, Du) @ U)
 
             def gcv(_lambda):
-                gamma = _lambda / Bd_norm
+                gamma = _lambda * Bd_norm
                 return np.sum(E * (gamma / (S**2 + gamma)) ** 2) / ((1 / M) * np.sum(gamma / (S**2 + gamma)) ** 2)
 
             # Optimize the GCV function
