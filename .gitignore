@@ -1,5 +1,5 @@
 # Data files
-*.mat
+results/
 
 # Python cache
 *.pyc

@@ -52,7 +52,7 @@ class SignalData:
         """
         Time step between each signal data point in seconds.
         """
-        return 1 / self.downsampled_frequency
+        return 1 / self.f
 
     @property
     def f(self):
