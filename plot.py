@@ -35,7 +35,7 @@ if __name__ == "__main__":
     datalist = datalist[datalist["group"].isin(["ID", "GS"])]
 
     # Main loop
-    for row in datalist.itertuples(index=False):
+    for row in datalist.itertuples():
         subject = row.subject
         phase = row.phase
 
