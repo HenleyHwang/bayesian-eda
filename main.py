@@ -60,14 +60,8 @@ for row in datalist.itertuples(index=False):
     C = np.array([0, 1, 1]).reshape(1, 3)
     model = LinearTimeInvariantModel(A=A, B=B, C=C)
 
-    # Set constraints where C theta <= b
-    constraint_C = np.array(
-        [
-            [-1, 0, 0],  # tau_r > 0.2
-            [1, -1, 0],  # tau_f > 2 * tau_r
-            [0, 1, -1],  # tau_s > 2 * tau_f
-        ]
-    )
+    # Set constraints 0.2 < tau_r < tau_f < tau_s
+    constraint_C = np.array([[-1, 0, 0], [1, -1, 0], [0, 1, -1]])
     constraint_b = np.array([-0.2, 0, 0])
 
     # Set priors [tau_r, tau_f, tau_s]

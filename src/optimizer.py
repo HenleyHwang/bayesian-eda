@@ -13,7 +13,7 @@ class BayesianEDA:
         constraints_b=np.inf,
         theta_mean=0,
         theta_variance=np.inf,
-        noise_variance=1e-4**2,
+        noise_variance=1e-8,
         input_lambda=10.0,
         input_norm=0.5,
         input_threshold=0.25,
@@ -127,7 +127,6 @@ class BayesianEDA:
         return u
 
     def approximate_input_covariance(self, u, Bd):
-        # Covariance of input
         Bu = np.einsum("ij,kj->ki", Bd, u)
         BuBuT = np.einsum("ki,kj->kij", Bu, Bu)
         epsilon = self.input_epsilon * np.eye(BuBuT.shape[-1])  # Perturbation for numerical stability
@@ -151,30 +150,27 @@ class BayesianEDA:
         # Initialize estimate covariance
         P = np.zeros((K + 1, D, D))  # +1 for initial state
 
-        for k in range(1, K + 1):  # +1 for initial state
+        for k in range(K):
             # Predict
-            x[k] = Ad @ x[k - 1]  # Predicted state estimate
-            P[k] = Ad @ P[k - 1] @ Ad.T + Q[k - 1]  # Predicted estimate covariance
+            x[k + 1] = Ad @ x[k]  # Predicted state estimate
+            P[k + 1] = Ad @ P[k] @ Ad.T + Q[k]  # Predicted estimate covariance
 
             # Update
-            vk = y[k - 1] - Cd @ x[k]  # Innovation
-            Sk = Cd @ P[k] @ Cd.T + self.noise_variance  # Innovation covariance
-            Kk = P[k] @ Cd.T @ np.linalg.inv(Sk)  # Optimal Kalman gain
-            x[k] = x[k] + Kk @ vk  # Updated state estimate
-            P[k] = (np.eye(D) - Kk @ Cd) @ P[k]  # Updated estimate covariance
-
+            ek = y[k] - Cd @ x[k + 1]  # Innovation
+            Sk = Cd @ P[k + 1] @ Cd.T + self.noise_variance  # Innovation covariance
+            Kk = P[k + 1] @ Cd.T @ np.linalg.inv(Sk)  # Optimal Kalman gain
+            x[k + 1] = x[k + 1] + Kk @ ek  # Updated state estimate
+            P[k + 1] = (np.eye(D) - Kk @ Cd) @ P[k + 1]  # Updated estimate covariance
         return x, P
 
     def kalman_smoother(self, x, P, Q, Ad):
-        for k in range(len(x) - 2, -1, -1):
-            # Predict
-            mk = Ad @ x[k]
-            Pk = Ad @ P[k] @ Ad.T + Q[k]
-
-            # Update
-            G = P[k] @ Ad.T @ np.linalg.inv(Pk)
-            x[k] = x[k] + G @ (x[k + 1] - mk)
-            P[k] = P[k] + G @ (P[k + 1] - Pk) @ G.T
+        # Rauch–Tung–Striebel (RTS) smoother
+        for k in range(len(x) - 1, 0, -1):
+            xk = Ad @ x[k - 1]  # Predicted state estimate
+            Pk = Ad @ P[k - 1] @ Ad.T + Q[k - 1]  # Predicted estimate covariance
+            Ck = P[k - 1] @ Ad.T @ np.linalg.inv(Pk)
+            x[k - 1] = x[k - 1] + Ck @ (x[k] - xk)  # Smoothed state estimate
+            P[k - 1] = P[k - 1] + Ck @ (P[k] - Pk) @ Ck.T  # Smoothed estimate covariance
         return x, P
 
     def maximize_likelihood(self, theta, x, y: SignalData, u, P):
