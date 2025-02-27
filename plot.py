@@ -39,7 +39,7 @@ def plot_results(title, _save_path, t, y_obs, phasic, tonic, u, u_obs, tau_r, ta
 
     lines, labels = ax[1].get_legend_handles_labels()
     lines2, labels2 = ax1.get_legend_handles_labels()
-    ax[1].legend(lines + lines2, labels + labels2, loc="upper right")
+    ax1.legend(lines + lines2, labels + labels2, loc="upper right")
 
     fig.tight_layout()
 

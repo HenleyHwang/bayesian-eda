@@ -81,7 +81,7 @@ for row in datalist.itertuples():
         constraints_b=constraint_b,
         theta_mean=tau_mean,
         theta_variance=tau_stdev**2,
-        input_threshold=0.005 * np.max(y_obs),
+        input_threshold=0.01 * np.min(y_obs),
         max_iter=100,
         relative_tolerance_theta=0.001,
         absolute_tolerance_input=0.01,
