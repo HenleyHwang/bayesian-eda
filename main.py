@@ -11,7 +11,7 @@ from src.optimizer import BayesianEDA
 # Define the path to save results
 exp_name = "best"
 save_path = f"results/log/{exp_name}/{{subject}}_{{phase}}.mat"
-save_path_fig = f"results/plots/{exp_name}/{{subject}}_{{phase}}.png"
+save_path_fig = f"results/plots/{exp_name}/{{subject}}_{{phase}}.pdf"
 
 # Define the path to load data
 load_path = "../data/Insomnia_SCR_MATLAB/{subject}/{subject}_{phase}.mat"
@@ -81,7 +81,7 @@ for row in datalist.itertuples():
         constraints_b=constraint_b,
         theta_mean=tau_mean,
         theta_variance=tau_stdev**2,
-        input_threshold=0.1,
+        input_threshold=0.005 * np.max(y_obs),
         max_iter=100,
         relative_tolerance_theta=0.001,
         absolute_tolerance_input=0.01,
@@ -107,12 +107,14 @@ for row in datalist.itertuples():
     _fig_save_path = save_path_fig.format(subject=subject, phase=phase)
     os.makedirs(os.path.dirname(_fig_save_path), exist_ok=True)
     plot_results(
+        f"{subject} {phase}",
         _fig_save_path,
         results["t"],
         results["y_obs"],
         results["phasic"],
         results["tonic"],
         results["u"],
+        results["u_obs"],
         results["tau_r"],
         results["tau_f"],
         results["tau_s"],

@@ -27,8 +27,8 @@ if __name__ == "__main__":
     # Get number of subjects for each phase and group
     rows = []
     for phase in phases:
-        n_ID = ((datalist["phase"] == phase) & (datalist["group"] == "ID")).sum()
-        n_GS = ((datalist["phase"] == phase) & (datalist["group"] == "GS")).sum()
+        n_ID = ((datalist["status"] == "included") & (datalist["phase"] == phase) & (datalist["group"] == "ID")).sum()
+        n_GS = ((datalist["status"] == "included") & (datalist["phase"] == phase) & (datalist["group"] == "GS")).sum()
         rows.append({"phase": phase, "ID": n_ID, "GS": n_GS})
     df_n_subjects = pd.DataFrame(rows, columns=["phase", "ID", "GS"])
     df_n_subjects.to_csv(os.path.join(save_path, "n_subjects.csv"), index=False)
@@ -72,9 +72,10 @@ if __name__ == "__main__":
             GS_feature = features["GS"][phase][feature]
             ID_feature = ID_feature[~np.isnan(ID_feature)]
             GS_feature = GS_feature[~np.isnan(GS_feature)]
+            plt.figure(figsize=(3, 3))
             plt.boxplot([ID_feature, GS_feature], tick_labels=["ID", "GS"])
             plt.title(f"{phase} {feature}")
-            plt.savefig(os.path.join(save_path, f"{feature}_{phase}.png"))
+            plt.savefig(os.path.join(save_path, f"{feature}_{phase}.pdf"))
             plt.close()
 
     # Features for each phase
@@ -100,7 +101,7 @@ if __name__ == "__main__":
         df_features = pd.DataFrame(
             rows, columns=["feature", "IDmedian", "IDlower", "IDupper", "GSmedian", "GSlower", "GSupper", "p"]
         )
-        df_features.to_csv(os.path.join(save_path, f"features_{phase}.csv"), index=False)
+        df_features.to_csv(os.path.join(save_path, f"features_{phase}.csv"), index=False, float_format="%.4f")
 
     # Features difference between phases
     phases_combinations = list(combinations(phases, 2))
@@ -126,4 +127,15 @@ if __name__ == "__main__":
                 }
             )
         df_features = pd.DataFrame(rows)
-        df_features.to_csv(os.path.join(save_path, f"features_{phase1}_{phase2}.csv"), index=False)
+        df_features.to_csv(os.path.join(save_path, f"features_{phase1}_{phase2}.csv"), index=False, float_format="%.4f")
+
+    n_subjects_diff = {}
+    for phase1, phase2 in phases_combinations:
+        n_subjects_diff[f"ID{phase1}{phase2}"] = (
+            ~np.isnan(features["ID"][phase1][feature]) & ~np.isnan(features["ID"][phase2][feature])
+        ).sum()
+        n_subjects_diff[f"GS{phase1}{phase2}"] = (
+            ~np.isnan(features["GS"][phase1][feature]) & ~np.isnan(features["GS"][phase2][feature])
+        ).sum()
+    df_n_subjects_diff = pd.DataFrame(n_subjects_diff, index=[0])
+    df_n_subjects_diff.to_csv(os.path.join(save_path, "n_subjects_diff.csv"), index=False)
