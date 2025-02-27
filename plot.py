@@ -32,7 +32,7 @@ def plot_results(title, _save_path, t, y_obs, phasic, tonic, u, u_obs, tau_r, ta
     ax1 = ax[1].twinx()
     ax1.vlines(t, 0, (u_obs > 0) * 1.1 * max(u), label="CS", color="gray", linewidth=2, alpha=0.5)
     ax1.stem(t, u, label="$u(t)$", linefmt="red", basefmt=" ", markerfmt=" ")
-    ax1.set_ylim(bottom=0, top=1.1 * max(u))
+    ax1.set_ylim(bottom=0, top=max(1.1 * max(u), 1))
     ax1.set_ylabel("ANS Activations ($\\mu$S/s)")
     ax1.set_xlim(left=0, right=t[-1])
     ax1.set_xlabel("Time (s)")
@@ -61,7 +61,7 @@ def plot_activations(title, _save_path, t, y_obs, u, tau_r, tau_f, tau_s):
     # Plot u
     ax1 = ax.twinx()
     ax1.stem(t, u, label="$u(t)$", linefmt="red", basefmt=" ", markerfmt=" ")
-    ax1.set_ylim(bottom=0, top=1.1 * max(u))
+    ax1.set_ylim(bottom=0, top=max(1.1 * max(u), 1))
     ax1.set_ylabel("ANS Activations ($\\mu$S/s)")
     ax1.set_xlim(left=0, right=t[-1])
     ax1.set_xlabel("Time (s)")
