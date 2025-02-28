@@ -20,9 +20,9 @@ class BayesianEDA:
         input_density=0.05,
         input_epsilon=1e-8,
         max_iter=1000,
-        irls_max_iter=10,
-        relative_tolerance_theta=0.01,
-        absolute_tolerance_input=0.1,
+        max_iter_irls=10,
+        tolerance_theta=0.01,
+        tolerance_input=0.1,
     ):
         # State-space model
         self.model = model
@@ -44,9 +44,9 @@ class BayesianEDA:
 
         # Hyperparameters for EM algorithm
         self.max_iter = max_iter
-        self.irls_max_iter = irls_max_iter
-        self.relative_tolerance_theta = relative_tolerance_theta
-        self.absolute_tolerance_input = absolute_tolerance_input
+        self.max_iter_irls = max_iter_irls
+        self.tolerance_theta = tolerance_theta
+        self.tolerance_input = tolerance_input
 
     def fit(self, theta0: np.ndarray, x0: np.ndarray, y: SignalData):
         # Initialize a new optimization
@@ -57,24 +57,24 @@ class BayesianEDA:
 
         # Initialize estimates
         theta = theta0  # Parameter estimates
-        Ad, Bd, Cd, _ = self.model.discretize(dt=y.dt, theta=theta)  # Discretized state-space matrices
+        A, B, C, _ = self.model.discretize(dt=y.dt, theta=theta)  # Discretized state-space matrices
         x = np.zeros((len(y) + 1, len(x0)))  # State estimates, +1 for initial state
         x[0] = x0  # Initial state
-        u = self.get_input_expectation(x, Ad, Bd)  # Input estimates
-        Q = self.approximate_input_covariance(u, Bd)  # Input covariance
+        u = self.get_input_expectation(x, A, B)  # Input estimates
+        Q = self.approximate_input_covariance(u, B)  # Input covariance
 
         # Expectation-Maximization (EM) algorithm
         for _ in range(self.max_iter):
             # E-step: Estimate states and inputs with iteratively reweighted least squares (IRLS)
-            for _ in range(self.irls_max_iter):
-                x, P = self.kalman_filter(x0, y, Q, Ad, Cd)
-                x, P = self.kalman_smoother(x, P, Q, Ad)
-                u = self.get_input_expectation(x, Ad, Bd)
-                Q = self.approximate_input_covariance(u, Bd)
+            for _ in range(self.max_iter_irls):
+                x, P = self.kalman_filter(x0, y, Q, A, C)
+                x, P = self.kalman_smoother(x, P, Q, A)
+                u = self.get_input_expectation(x, A, B)
+                Q = self.approximate_input_covariance(u, B)
 
             # M-step: Optimize parameters
-            theta = self.maximize_likelihood(theta, x, y, u, P)
-            Ad, Bd, Cd, _ = self.model.discretize(dt=y.dt, theta=theta)
+            theta = self.maximize_likelihood(theta, x0, y, u)
+            A, B, C, _ = self.model.discretize(dt=y.dt, theta=theta)
 
             self.log(theta, x, u)
             if self.check_convergence():
@@ -96,10 +96,10 @@ class BayesianEDA:
         self.input_min_interval = y.f  # At most one input per second
         self.input_max_number = np.round(y.T * self.input_density).astype(int)
 
-    def get_input_expectation(self, x, Ad, Bd):
+    def get_input_expectation(self, x, A, B):
         # Expectation of input
-        Bu = x[1:] - np.einsum("ij,kj->ki", Ad, x[:-1])  # Expectation of B u_k = x_{k+1} - A x_k
-        u = np.einsum("ij,kj->ki", np.linalg.pinv(Bd), Bu)  # Least squares solution for u_k
+        Bu = x[1:] - np.einsum("ij,kj->ki", A, x[:-1])  # Expectation of B u_k = x_{k+1} - A x_k
+        u = np.einsum("ij,kj->ki", np.linalg.pinv(B), Bu)  # Least squares solution for u_k
 
         # Heuristic refinement
         u = self.refine_input(u)
@@ -126,20 +126,13 @@ class BayesianEDA:
         u[idxs] = 0
         return u
 
-    def approximate_input_covariance(self, u, Bd):
-        Bu = np.einsum("ij,kj->ki", Bd, u)
-        BuBuT = np.einsum("ki,kj->kij", Bu, Bu)
-        epsilon = self.input_epsilon * np.eye(BuBuT.shape[-1])  # Perturbation for numerical stability
+    def approximate_input_covariance(self, u, B):
+        # Approximated Gaussian covariance of Bu
+        epsilon = self.input_epsilon * np.eye(B.shape[0])  # Jitter to ensure nonsingular
+        Q = np.einsum("ij,kj,jl->kil", B, u ** (2 - self.input_norm) / self.input_lambda, B.T)
+        return Q + epsilon
 
-        # Compute fractional power of real symmetric matrix: A^p = V D^p V^T
-        D_flat, V = np.linalg.eigh(BuBuT + epsilon)  # Diagonalization of real symmetric matrix
-        D = np.zeros((D_flat.shape[0], D_flat.shape[1], D_flat.shape[1]))  # Diagonal matrix with eigenvalues
-        k, i = np.indices((D_flat.shape[0], D_flat.shape[1]), sparse=True)
-        D[k, i, i] = D_flat
-        Q = np.einsum("kij,kjl,klm->kim", V, D ** ((2 - self.input_norm) / 2), V.transpose(0, 2, 1)) / self.input_lambda
-        return Q
-
-    def kalman_filter(self, x0, y, Q, Ad, Cd):
+    def kalman_filter(self, x0, y, Q, A, C):
         K = len(y)  # Length of the signal
         D = len(x0)  # Dimension of the state
 
@@ -152,53 +145,62 @@ class BayesianEDA:
 
         for k in range(K):
             # Predict
-            x[k + 1] = Ad @ x[k]  # Predicted state estimate
-            P[k + 1] = Ad @ P[k] @ Ad.T + Q[k]  # Predicted estimate covariance
+            x[k + 1] = A @ x[k]  # Predicted state estimate
+            P[k + 1] = A @ P[k] @ A.T + Q[k]  # Predicted estimate covariance
 
             # Update
-            ek = y[k] - Cd @ x[k + 1]  # Innovation
-            Sk = Cd @ P[k + 1] @ Cd.T + self.noise_variance  # Innovation covariance
-            Kk = P[k + 1] @ Cd.T @ np.linalg.inv(Sk)  # Optimal Kalman gain
+            ek = y[k] - C @ x[k + 1]  # Innovation
+            Sk = C @ P[k + 1] @ C.T + self.noise_variance  # Innovation covariance
+            Kk = P[k + 1] @ C.T @ np.linalg.inv(Sk)  # Optimal Kalman gain
             x[k + 1] = x[k + 1] + Kk @ ek  # Updated state estimate
-            P[k + 1] = (np.eye(D) - Kk @ Cd) @ P[k + 1]  # Updated estimate covariance
+            P[k + 1] = (np.eye(D) - Kk @ C) @ P[k + 1]  # Updated estimate covariance
         return x, P
 
-    def kalman_smoother(self, x, P, Q, Ad):
-        # Rauch–Tung–Striebel (RTS) smoother
+    def kalman_smoother(self, x, P, Q, A):
+        # Rauch-Tung-Striebel (RTS) smoother
         for k in range(len(x) - 1, 0, -1):
-            xk = Ad @ x[k - 1]  # Predicted state estimate
-            Pk = Ad @ P[k - 1] @ Ad.T + Q[k - 1]  # Predicted estimate covariance
-            Ck = P[k - 1] @ Ad.T @ np.linalg.inv(Pk)
+            xk = A @ x[k - 1]  # Predicted state estimate
+            Pk = A @ P[k - 1] @ A.T + Q[k - 1]  # Predicted estimate covariance
+            Ck = P[k - 1] @ A.T @ np.linalg.inv(Pk)
             x[k - 1] = x[k - 1] + Ck @ (x[k] - xk)  # Smoothed state estimate
             P[k - 1] = P[k - 1] + Ck @ (P[k] - Pk) @ Ck.T  # Smoothed estimate covariance
         return x, P
 
-    def maximize_likelihood(self, theta, x, y: SignalData, u, P):
-        # Remove initial state
-        x = x[1:]
-        P = P[1:]
+    def maximize_likelihood(self, theta, x0, y: SignalData, u):
+        K = len(y)  # Length of the signal
+        D = len(x0)  # Dimension of the state
 
         # Define objective function
         def neg_log_likelihood(_theta):
-            Ad, Bd, Cd, _ = self.model.discretize(dt=y.dt, theta=_theta)
+            # Get state-space matrices with new parameters
+            A, B, C, _ = self.model.discretize(dt=y.dt, theta=_theta)
 
-            nll = 0
-            # nll += 1 / 2 * np.linalg.vector_norm(y) ** 2  # Constant w.r.t. theta
-            nll += 1 / 2 * np.trace(Ad @ (np.einsum("ki,kj->ij", x, x) + np.einsum("kij->ij", P)) @ Ad.T)
-            nll -= np.trace(Ad * np.einsum("k,ij,kj->", y, Cd, x))
-            nll -= np.trace(Bd @ np.einsum("k,ij,kj->ij", y, Cd, u))
-            nll += np.trace(Bd @ np.einsum("ki,kj->ij", u, u) @ Bd.T)
-            nll += np.trace(Ad @ np.einsum("ki,kj->ij", x, u) @ Bd.T)
-            nll += np.sum((_theta - self.theta_mean) ** 2 / self.theta_variance)
-            return nll.item()
+            # Get state estimates
+            x = np.zeros((K + 1, D))  # +1 for initial state
+            x[0] = x0
+            for k in range(K):
+                x[k + 1] = A @ x[k] + B @ u[k]
+            x = x[1:]  # Remove initial state
+
+            # Get predicted output
+            Cx = np.einsum("ij,kj->ki", C, x)
+            Cx = np.squeeze(Cx, axis=-1)  # Ensure broadcastable with y
+
+            # Compute negative log-likelihood
+            J = (
+                np.sum((y - Cx) ** 2)
+                + np.sum((_theta - self.theta_mean) ** 2 / self.theta_variance) * self.noise_variance
+            )  # Scaled by 2 * noise_variance
+            return J
 
         # Minimize with interior point method
         theta = minimize(
             neg_log_likelihood,
             theta,
             method="trust-constr",  # With inequality constraints, this becomes interior point method
-            constraints=self.constraint,
             hess=lambda x: np.zeros(2 * (len(theta),)),  # delta_grad == 0 in quasi-Newton
+            constraints=self.constraint,
+            tol=self.tolerance_theta,
         ).x
         return theta
 
@@ -215,10 +217,10 @@ class BayesianEDA:
 
         theta_prev = self.theta_log[self.iteration - 1]
         theta_curr = self.theta_log[self.iteration]
-        theta_converged = np.allclose(theta_curr, theta_prev, rtol=self.relative_tolerance_theta, atol=0)
+        theta_converged = np.allclose(theta_curr, theta_prev, rtol=0, atol=self.tolerance_theta)
 
         u_prev = self.inputs_log[self.iteration - 1]
         u_curr = self.inputs_log[self.iteration]
-        u_converged = np.allclose(u_curr, u_prev, rtol=0, atol=self.absolute_tolerance_input)
+        u_converged = np.allclose(u_curr, u_prev, rtol=0, atol=self.tolerance_input)
 
         return theta_converged and u_converged

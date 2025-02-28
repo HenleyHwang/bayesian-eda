@@ -30,5 +30,5 @@ class LinearTimeInvariantModel:
         C = self.C(theta) if callable(self.C) else self.C
         D = self.D(theta) if callable(self.D) else self.D
 
-        Ad, Bd, Cd, Dd, _ = cont2discrete((A, B, C, D), dt, method="impulse")
-        return Ad, Bd, Cd, Dd
+        A, B, C, D, _ = cont2discrete((A, B, C, D), dt, method="impulse")
+        return A, B, C, D

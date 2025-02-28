@@ -60,13 +60,13 @@ for row in datalist.itertuples():
     C = np.array([0, 1, 1]).reshape(1, 3)
     model = LinearTimeInvariantModel(A=A, B=B, C=C)
 
-    # Set constraints 0.2 < tau_r < tau_f < tau_s
-    constraint_C = np.array([[-1, 0, 0], [1, -1, 0], [0, 1, -1]])
-    constraint_b = np.array([-0.2, 0, 0])
+    # Set constraints 4 <= tau_r <= tau_f/1.5 <= tau_s/1.5^2
+    constraint_C = np.array([[-1, 0, 0], [1, -1 / 1.5, 0], [0, 1, -1 / 1.5]])
+    constraint_b = np.array([-4, 0, 0])
 
     # Set priors [tau_r, tau_f, tau_s]
-    tau_mean = np.array([2, 5, 80])
-    tau_stdev = np.array([1, 2, 30]) * 0.1
+    tau_mean = np.array([5, 10, 80])
+    tau_stdev = np.array([1, 2, 4]) * 1e-5
 
     # Initialize parameters with the mean of the prior
     tau_0 = tau_mean
@@ -83,8 +83,8 @@ for row in datalist.itertuples():
         theta_variance=tau_stdev**2,
         input_threshold=0.01 * np.min(y_obs),
         max_iter=100,
-        relative_tolerance_theta=0.001,
-        absolute_tolerance_input=0.01,
+        tolerance_theta=0.01,
+        tolerance_input=0.01,
     )
     theta_log, x_log, u_log = optimizer.fit(theta0=tau_0, x0=x0, y=y_obs)
 

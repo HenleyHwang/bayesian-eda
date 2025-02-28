@@ -8,12 +8,41 @@ import pandas as pd
 from scipy.io import loadmat
 from scipy.stats import ranksums, wilcoxon
 
+plt.rcParams["text.usetex"] = True
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.serif"] = ["cm"]
+plt.rcParams["font.size"] = 12
+
+
 if __name__ == "__main__":
     exp_name = "best"
     load_path = f"results/log/{exp_name}/{{subject}}_{{phase}}.mat"
 
     save_path = f"results/stats/{exp_name}"
     os.makedirs(save_path, exist_ok=True)
+
+    # Dictionary for display
+    units = {
+        "tau_r": "s",
+        "tau_f": "s",
+        "tau_s": "s",
+        "u_0": "1",
+        "u_1": r"$\mu$S/s",
+        "u_2": r"$\mu$S/s",
+    }
+    symbols = {
+        "tau_r": r"$\tau_r$",
+        "tau_f": r"$\tau_f$",
+        "tau_s": r"$\tau_s$",
+        "u_0": r"$\|u\|_0$",
+        "u_1": r"$\|u\|_1$",
+        "u_2": r"$\|u\|_2$",
+    }
+    phase_names = {
+        "cond": "Conditioning",
+        "ext": "Extinction",
+        "recall": "Recall",
+    }
 
     # Get the list of subjects and phases
     datalist_path = "../data/datalist.csv"
@@ -74,8 +103,9 @@ if __name__ == "__main__":
             GS_feature = GS_feature[~np.isnan(GS_feature)]
             plt.figure(figsize=(3, 3))
             plt.boxplot([ID_feature, GS_feature], tick_labels=["ID", "GS"])
-            plt.title(f"{phase} {feature}")
-            plt.savefig(os.path.join(save_path, f"{feature}_{phase}.pdf"))
+            plt.ylabel(f"{symbols[feature]} ({units[feature]})")
+            plt.title(f"Box Plot of {symbols[feature]} in {phase_names[phase]} Phase")
+            plt.savefig(os.path.join(save_path, f"{feature}_{phase}.pdf"), bbox_inches="tight")
             plt.close()
 
     # Features for each phase
@@ -88,7 +118,7 @@ if __name__ == "__main__":
             GS_feature = GS_feature[~np.isnan(GS_feature)]
             rows.append(
                 {
-                    "feature": feature,
+                    "feature": f"{symbols[feature]} ({units[feature]})",
                     "IDmedian": np.median(ID_feature),
                     "IDlower": np.percentile(ID_feature, 25),
                     "IDupper": np.percentile(ID_feature, 75),
@@ -114,7 +144,7 @@ if __name__ == "__main__":
             GS_diff = GS_diff[~np.isnan(GS_diff)]
             rows.append(
                 {
-                    "feature": feature,
+                    "feature": f"{symbols[feature]} ({units[feature]})",
                     "IDmedian": np.median(ID_diff),
                     "IDlower": np.percentile(ID_diff, 25),
                     "IDupper": np.percentile(ID_diff, 75),
