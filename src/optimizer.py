@@ -122,7 +122,7 @@ class BayesianEDA:
             u[max_idx + 1 : right] = 0
 
         # Pick the top max number of inputs
-        idxs = np.argsort(-u, stable=True)[self.input_max_number :]  # Indices to remove
+        idxs = np.argsort(-u, axis=None, stable=True)[self.input_max_number :]  # Indices to remove
         u[idxs] = 0
         return u
 
