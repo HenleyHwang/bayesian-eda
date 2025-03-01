@@ -184,7 +184,6 @@ class BayesianEDA:
 
             # Get predicted output
             Cx = np.einsum("ij,kj->ki", C, x)
-            Cx = np.squeeze(Cx, axis=-1)  # Ensure broadcastable with y
 
             # Compute negative log-likelihood
             J = (

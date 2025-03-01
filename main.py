@@ -72,7 +72,7 @@ for row in datalist.itertuples():
     tau_0 = tau_mean
 
     # Initial state [duct, phasic, tonic]
-    x0 = np.array([0, 0, y_obs[0]])
+    x0 = np.array([0, 0, y_obs[0].item()])
 
     # Estimate parameters, states and inputs
     optimizer = BayesianEDA(
@@ -91,8 +91,8 @@ for row in datalist.itertuples():
     # Save results
     results = {
         "t": y_obs.t,
-        "y_obs": y_obs.data,
-        "u_obs": u_obs.data,
+        "y_obs": y_obs.data[:, 0],
+        "u_obs": u_obs.data[:, 0],
         "phasic": x_log[-1][:, 1],
         "tonic": x_log[-1][:, 2],
         "u": u_log[-1][:, 0],
