@@ -60,12 +60,12 @@ for row in datalist.itertuples():
     C = np.array([0, 1, 1]).reshape(1, 3)
     model = LinearTimeInvariantModel(A=A, B=B, C=C)
 
-    # Set constraints 4 <= tau_r <= tau_f/1.5 <= tau_s/1.5^2
-    constraint_C = np.array([[-1, 0, 0], [1, -1 / 1.5, 0], [0, 1, -1 / 1.5]])
-    constraint_b = np.array([-4, 0, 0])
+    # Set constraints 0.1 <= tau_r <= tau_f/1.5 <= tau_s/1.5^2
+    constraint_A = np.array([[1, 0, 0], [-1.5, 1, 0], [0, -1.5, 1]])
+    constraint_lb = np.array([0.1, 0, 0])
 
     # Set priors [tau_r, tau_f, tau_s]
-    tau_mean = np.array([5, 10, 80])
+    tau_mean = np.array([2, 5, 80])
     tau_stdev = np.array([1, 1, 2]) * 1e-5
 
     # Initialize parameters with the mean of the prior
@@ -77,8 +77,8 @@ for row in datalist.itertuples():
     # Estimate parameters, states and inputs
     optimizer = BayesianEDA(
         model=model,
-        constraints_C=constraint_C,
-        constraints_b=constraint_b,
+        constraint_A=constraint_A,
+        constraint_lb=constraint_lb,
         theta_mean=tau_mean,
         theta_variance=tau_stdev**2,
         input_threshold=0.01 * np.min(y_obs),

@@ -9,8 +9,8 @@ class BayesianEDA:
     def __init__(
         self,
         model: LinearTimeInvariantModel,
-        constraints_C=None,
-        constraints_b=np.inf,
+        constraint_A=None,
+        constraint_lb=np.inf,
         theta_mean=0,
         theta_variance=np.inf,
         noise_variance=1e-8,
@@ -27,8 +27,8 @@ class BayesianEDA:
         # State-space model
         self.model = model
 
-        # Linear inequality constraints: C theta <= b
-        self.constraint = LinearConstraint(constraints_C, ub=constraints_b)
+        # Linear inequality constraint: A theta >= lb
+        self.constraint = LinearConstraint(constraint_A, lb=constraint_lb)
 
         # Hyperparameters for priors
         self.theta_mean = theta_mean
@@ -196,7 +196,7 @@ class BayesianEDA:
         theta = minimize(
             neg_log_likelihood,
             theta,
-            method="trust-constr",  # With inequality constraints, this becomes interior point method
+            method="trust-constr",  # With inequality constraint, this becomes interior point method
             hess=lambda x: np.zeros(2 * (len(theta),)),  # delta_grad == 0 in quasi-Newton
             constraints=self.constraint,
             tol=self.tolerance_theta,

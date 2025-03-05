@@ -84,7 +84,7 @@ if __name__ == "__main__":
         features[group][phase]["tau_r"].append(result["tau_r"].item())
         features[group][phase]["tau_f"].append(result["tau_f"].item())
         features[group][phase]["tau_s"].append(result["tau_s"].item())
-        features[group][phase]["u_0"].append(np.sum(result["u"] > 0).item())
+        features[group][phase]["u_0"].append(np.sum(result["u"] > 0).item() if ~np.isnan(result["u"]).any() else np.nan)
         features[group][phase]["u_1"].append(np.linalg.vector_norm(result["u"], ord=1).item())
         features[group][phase]["u_2"].append(np.linalg.vector_norm(result["u"], ord=2).item())
 
