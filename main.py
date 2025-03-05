@@ -66,7 +66,7 @@ for row in datalist.itertuples():
 
     # Set priors [tau_r, tau_f, tau_s]
     tau_mean = np.array([5, 10, 80])
-    tau_stdev = np.array([1, 2, 4]) * 1e-5
+    tau_stdev = np.array([1, 1, 2]) * 1e-5
 
     # Initialize parameters with the mean of the prior
     tau_0 = tau_mean
