@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from scipy.signal import firwin, group_delay, lfilter
@@ -12,11 +14,11 @@ class SignalData:
     def __init__(
         self,
         raw_data: np.ndarray,
-        original_frequency: int = 200,
+        original_frequency: int,
         downsampled_frequency: int = 4,
         lowpass_cutoff_frequency: int = 2,
         lowpass_filter_order: int = 4096,
-        outlier_window_duration: float = 3,
+        outlier_window_duration: Optional[float] = None,
     ):
         self.raw_data = raw_data
         self.original_frequency = original_frequency
@@ -36,7 +38,8 @@ class SignalData:
         # 2. Downsample the signal to reduce computational cost
         self.data = downsample(self.data, self.original_frequency, self.downsampled_frequency)
         # 3. Fill outliers to remove artifacts
-        self.data = fill_outliers(self.data, self.downsampled_frequency, outlier_window_duration)
+        if outlier_window_duration is not None:
+            self.data = fill_outliers(self.data, self.downsampled_frequency, outlier_window_duration)
 
     @property
     def t(self):
@@ -74,7 +77,7 @@ class SignalData:
 
 
 class InputsData(SignalData):
-    def __init__(self, raw_data, original_frequency=200, downsampled_frequency=4):
+    def __init__(self, raw_data, original_frequency, downsampled_frequency=4):
         self.raw_data = raw_data
         self.original_frequency = original_frequency
         self.downsampled_frequency = downsampled_frequency

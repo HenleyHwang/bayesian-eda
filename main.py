@@ -37,15 +37,8 @@ for row in datalist.itertuples():
     u_obs = data_file[:, 1]
 
     # Process data
-    y_obs = SignalData(
-        raw_data=y_obs,
-        original_frequency=200,
-        downsampled_frequency=4,
-        lowpass_cutoff_frequency=2,
-        lowpass_filter_order=4096,
-        outlier_window_duration=3,
-    )
-    u_obs = InputsData(raw_data=u_obs, original_frequency=200, downsampled_frequency=4)
+    y_obs = SignalData(raw_data=y_obs, original_frequency=200, outlier_window_duration=3)
+    u_obs = InputsData(raw_data=u_obs, original_frequency=200)
 
     # Define the model
     eta = 0.3  # Ratio of tonic to phasic
