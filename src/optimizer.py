@@ -193,14 +193,15 @@ class BayesianEDA:
             return J
 
         # Minimize with interior point method
-        theta = minimize(
-            neg_log_likelihood,
-            theta,
-            method="trust-constr",  # With inequality constraint, this becomes interior point method
-            hess=lambda x: np.zeros(2 * (len(theta),)),  # delta_grad == 0 in quasi-Newton
-            constraints=self.constraint,
-            tol=self.tolerance_theta,
-        ).x
+        with np.errstate(over="ignore", invalid="ignore"):  # Suppress overflow warning
+            theta = minimize(
+                neg_log_likelihood,
+                theta,
+                method="trust-constr",  # With inequality constraint, this becomes interior point method
+                hess=lambda x: np.zeros(2 * (len(theta),)),  # delta_grad == 0 in quasi-Newton
+                constraints=self.constraint,
+                tol=self.tolerance_theta,
+            ).x
         return theta
 
     def log(self, theta, x, u):
