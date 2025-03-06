@@ -18,7 +18,7 @@ if __name__ == "__main__":
     exp_name = "best"
     load_path = f"results/log/{exp_name}/{{subject}}_{{phase}}.mat"
 
-    save_path = f"results/stats/{exp_name}"
+    save_path = f"results/paper/stats"
     os.makedirs(save_path, exist_ok=True)
 
     # Dictionary for display
@@ -26,17 +26,15 @@ if __name__ == "__main__":
         "tau_r": "s",
         "tau_f": "s",
         "tau_s": "s",
-        "u_0": "1",
-        "u_1": r"$\mu$S/s",
-        "u_2": r"$\mu$S/s",
+        "u_num": "1",
+        "u_bar": r"$\mu$S/s",
     }
     symbols = {
         "tau_r": r"$\tau_r$",
         "tau_f": r"$\tau_f$",
         "tau_s": r"$\tau_s$",
-        "u_0": r"$\|u\|_0$",
-        "u_1": r"$\|u\|_1$",
-        "u_2": r"$\|u\|_2$",
+        "u_num": r"$\#\mathbf{u}_{>0}$",
+        "u_bar": r"$\bar{\mathbf{u}}_{>0}$",
     }
     phase_names = {
         "cond": "Conditioning",
@@ -49,6 +47,10 @@ if __name__ == "__main__":
     with open(datalist_path, "r") as f:
         datalist = pd.read_csv(f)
     datalist = datalist[datalist["group"].isin(["ID", "GS"])]
+
+    # Exclude over-stimulated subjects
+    exclusion = ["2IIGNIM_172_cond", "2IIGNIM_172_ext", "2IILBRA_186_cond", "2IILBRA_186_ext", "2INOVAK_181_ext"]
+    datalist.loc[datalist["subject_phase"].isin(exclusion), "status"] = "excluded"
 
     # Get the list of phases
     phases = datalist["phase"].unique()
@@ -76,17 +78,26 @@ if __name__ == "__main__":
             # Load result
             _load_path = load_path.format(subject=subject, phase=phase)
             result = loadmat(_load_path)
+
+            tau_r = result["tau_r"].item()
+            tau_f = result["tau_f"].item()
+            tau_s = result["tau_s"].item()
+
+            u = result["u"].flatten()
+            u_pos = u[u > 0]
+            u_num = len(u_pos)
+            u_bar = np.mean(u_pos) if u_num > 0 else 0
+
         else:
             # Use nan for excluded data for pairwise tests
-            result = defaultdict(lambda: np.array(np.nan))
+            tau_r, tau_f, tau_s, u_num, u_bar = np.nan, np.nan, np.nan, np.nan, np.nan
 
         # Extract features
-        features[group][phase]["tau_r"].append(result["tau_r"].item())
-        features[group][phase]["tau_f"].append(result["tau_f"].item())
-        features[group][phase]["tau_s"].append(result["tau_s"].item())
-        features[group][phase]["u_0"].append(np.sum(result["u"] > 0).item() if ~np.isnan(result["u"]).any() else np.nan)
-        features[group][phase]["u_1"].append(np.linalg.vector_norm(result["u"], ord=1).item())
-        features[group][phase]["u_2"].append(np.linalg.vector_norm(result["u"], ord=2).item())
+        features[group][phase]["tau_r"].append(tau_r)
+        features[group][phase]["tau_f"].append(tau_f)
+        features[group][phase]["tau_s"].append(tau_s)
+        features[group][phase]["u_num"].append(u_num)
+        features[group][phase]["u_bar"].append(u_bar)
 
     # Convert to arrays
     for group in features.keys():
