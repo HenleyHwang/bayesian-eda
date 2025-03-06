@@ -83,15 +83,15 @@ for row in datalist.itertuples():
 
     # Save results
     results = {
-        "t": y_obs.t,
-        "y_obs": y_obs.data[:, 0],
-        "u_obs": u_obs.data[:, 0],
-        "phasic": x_log[-1][:, 1],
-        "tonic": x_log[-1][:, 2],
-        "u": u_log[-1][:, 0],
         "tau_r": theta_log[-1][0],
         "tau_f": theta_log[-1][1],
         "tau_s": theta_log[-1][2],
+        "t": y_obs.t,
+        "y_obs": y_obs.data[:, 0],
+        "phasic": x_log[-1][:, 1],
+        "tonic": x_log[-1][:, 2],
+        "u": u_log[-1][:, 0],
+        "u_obs": u_obs.data[:, 0],
     }
     _save_path = save_path.format(subject=subject, phase=phase)
     os.makedirs(os.path.dirname(_save_path), exist_ok=True)
@@ -100,15 +100,15 @@ for row in datalist.itertuples():
     _fig_save_path = save_path_fig.format(subject=subject, phase=phase)
     os.makedirs(os.path.dirname(_fig_save_path), exist_ok=True)
     plot_results(
-        f"{subject} {phase}",
-        _fig_save_path,
-        results["t"],
-        results["y_obs"],
-        results["phasic"],
-        results["tonic"],
-        results["u"],
-        results["u_obs"],
-        results["tau_r"],
-        results["tau_f"],
-        results["tau_s"],
+        title=f"{subject} {phase}",
+        save_path=_fig_save_path,
+        tau_r=results["tau_r"],
+        tau_f=results["tau_f"],
+        tau_s=results["tau_s"],
+        t=results["t"],
+        y_obs=results["y_obs"],
+        phasic=results["phasic"],
+        tonic=results["tonic"],
+        u=results["u"],
+        u_obs=None,  # Don't plot u_obs
     )

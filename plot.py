@@ -9,7 +9,7 @@ plt.rcParams["font.serif"] = ["cm"]
 plt.rcParams["font.size"] = 12
 
 
-def plot_results(title, _save_path, t, y_obs, phasic, tonic, u, u_obs, tau_r, tau_f, tau_s):
+def plot_results(title, save_path, tau_r, tau_f, tau_s, t, y_obs, phasic, tonic, u, u_obs=None):
     fig, ax = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
 
     # Set title
@@ -31,7 +31,8 @@ def plot_results(title, _save_path, t, y_obs, phasic, tonic, u, u_obs, tau_r, ta
     ax[1].grid()
     # Plot u
     ax1 = ax[1].twinx()
-    # ax1.vlines(t, 0, (u_obs > 0) * 1.1 * max(u), label=r"CS", color="gray", linewidth=2, alpha=0.5)
+    if u_obs is not None:
+        ax1.vlines(t, 0, (u_obs > 0) * 1.1 * max(u), label=r"CS", color="gray", linewidth=2, alpha=0.5)
     ax1.stem(t, u, label=r"$u(t)$", linefmt="red", basefmt=" ", markerfmt=" ")
     ax1.set_ylim(bottom=0, top=max(1.1 * max(u), 1))
     ax1.set_ylabel(r"ANS Activations ($\mu$S/s)")
@@ -44,12 +45,12 @@ def plot_results(title, _save_path, t, y_obs, phasic, tonic, u, u_obs, tau_r, ta
     ax1.set_xlabel(r"Time (s)")
 
     fig.tight_layout()
-    os.makedirs(os.path.dirname(_save_path), exist_ok=True)
-    fig.savefig(_save_path, bbox_inches="tight")
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    fig.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
 
 
-def plot_activations(title, _save_path, t, y_obs, u, tau_r, tau_f, tau_s):
+def plot_activations(title, save_path, tau_r, tau_f, tau_s, t, y_obs, u):
     fig, ax = plt.subplots(1, 1, figsize=(6, 3), sharex=True)
 
     # Set title
@@ -75,8 +76,8 @@ def plot_activations(title, _save_path, t, y_obs, u, tau_r, tau_f, tau_s):
     ax1.set_xlabel(r"Time (s)")
 
     fig.tight_layout()
-    os.makedirs(os.path.dirname(_save_path), exist_ok=True)
-    fig.savefig(_save_path, bbox_inches="tight")
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    fig.savefig(save_path, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -93,19 +94,18 @@ if __name__ == "__main__":
         # Load result
         _load_path = load_path.format(subject=subject, phase=phase)
         result = loadmat(_load_path)
+        tau_r = result["tau_r"].item()
+        tau_f = result["tau_f"].item()
+        tau_s = result["tau_s"].item()
         t = result["t"].flatten()
         y_obs = result["y_obs"].flatten()
         phasic = result["phasic"].flatten()
         tonic = result["tonic"].flatten()
         u = result["u"].flatten()
-        u_obs = result["u_obs"].flatten()
-        tau_r = result["tau_r"].item()
-        tau_f = result["tau_f"].item()
-        tau_s = result["tau_s"].item()
 
         # Plot
         _save_path = save_path.format(filename=filename)
-        plot_results(title, _save_path, t, y_obs, phasic, tonic, u, u_obs, tau_r, tau_f, tau_s)
+        plot_results(title, _save_path, tau_r, tau_f, tau_s, t, y_obs, phasic, tonic, u)
 
     # Plot activations only
     save_path_u = "results/paper/plots/{filename}_activations.pdf"
@@ -121,13 +121,13 @@ if __name__ == "__main__":
         # Load result
         _load_path = load_path.format(subject=subject, phase=phase)
         result = loadmat(_load_path)
-        t = result["t"].flatten()
-        y_obs = result["y_obs"].flatten()
-        u = result["u"].flatten()
         tau_r = result["tau_r"].item()
         tau_f = result["tau_f"].item()
         tau_s = result["tau_s"].item()
+        t = result["t"].flatten()
+        y_obs = result["y_obs"].flatten()
+        u = result["u"].flatten()
 
         # Plot
         _save_path_u = save_path_u.format(filename=filename)
-        plot_activations(title, _save_path_u, t, y_obs, u, tau_r, tau_f, tau_s)
+        plot_activations(title, _save_path_u, tau_r, tau_f, tau_s, t, y_obs, u)
