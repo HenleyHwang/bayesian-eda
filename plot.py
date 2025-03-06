@@ -1,7 +1,6 @@
 import os
 
 import matplotlib.pyplot as plt
-from scipy.io import loadmat
 
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
@@ -82,6 +81,8 @@ def plot_activations(title, save_path, tau_r, tau_f, tau_s, t, y_obs, u):
 
 
 if __name__ == "__main__":
+    from scipy.io import loadmat
+
     exp_name = "best"
     load_path = f"results/log/{exp_name}/{{subject}}_{{phase}}.mat"
 
