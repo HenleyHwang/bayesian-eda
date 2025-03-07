@@ -24,9 +24,9 @@ datalist = datalist[datalist["status"].isin(["included"])]  # Exclude data by vi
 datalist = datalist[datalist["group"].isin(["ID", "GS"])]  # Exclude data that is not ID or GS
 
 # Main loop
-for row in datalist.itertuples():
-    subject = row.subject
-    phase = row.phase
+for _, row in datalist.iterrows():
+    subject = row["subject"]
+    phase = row["phase"]
 
     print(f"Processing {subject} {phase}...")
 

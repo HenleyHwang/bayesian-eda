@@ -68,11 +68,11 @@ if __name__ == "__main__":
     features = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
     # Extract features
-    for row in datalist.itertuples():
-        subject = row.subject
-        phase = row.phase
-        group = row.group
-        status = row.status
+    for _, row in datalist.iterrows():
+        subject = row["subject"]
+        phase = row["phase"]
+        group = row["group"]
+        status = row["status"]
 
         if status == "included":
             # Load result
