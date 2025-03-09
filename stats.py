@@ -49,8 +49,14 @@ if __name__ == "__main__":
     datalist = datalist[datalist["group"].isin(["ID", "GS"])]
 
     # Exclude over-stimulated subjects
-    exclusion = ["2IIGNIM_172_cond", "2IIGNIM_172_ext", "2IILBRA_186_cond", "2IILBRA_186_ext", "2INOVAK_181_ext"]
-    datalist.loc[datalist["subject_phase"].isin(exclusion), "status"] = "excluded"
+    def over_stimulated(row):
+        if row["status"] != "included":
+            return
+        result = loadmat(load_path.format(subject=row["subject"], phase=row["phase"]))
+        if np.sum(result["u_obs"] > 0) > 50:
+            row["status"] = "excluded"
+
+    datalist.apply(over_stimulated, axis=1)
 
     # Get the list of phases
     phases = datalist["phase"].unique()
