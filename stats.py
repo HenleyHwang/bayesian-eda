@@ -23,11 +23,11 @@ if __name__ == "__main__":
 
     # Dictionary for display
     units = {
-        "tau_r": "s",
-        "tau_f": "s",
-        "tau_s": "s",
-        "u_num": "1",
-        "u_bar": r"$\mu$S/s",
+        "tau_r": r"$s$",
+        "tau_f": r"$s$",
+        "tau_s": r"$s$",
+        "u_num": r"$1$",
+        "u_bar": r"$\mu S/s$",
     }
     symbols = {
         "tau_r": r"$\tau_r$",
