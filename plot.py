@@ -40,8 +40,8 @@ def plot_results(title, save_path, tau_r, tau_f, tau_s, t, y_obs, phasic, tonic,
     ax1.legend(lines + lines2, labels + labels2, loc="upper right")
 
     # Set x-axis
-    ax1.set_xlim(left=0, right=t[-1])
-    ax1.set_xlabel(r"Time ($s$)")
+    ax[1].set_xlim(left=0, right=t[-1])
+    ax[1].set_xlabel(r"Time ($s$)")
 
     fig.tight_layout()
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -71,8 +71,8 @@ def plot_activations(title, save_path, tau_r, tau_f, tau_s, t, y_obs, u):
     ax.legend(lines + lines2, labels + labels2, loc="upper right")
 
     # Set x-axis
-    ax1.set_xlim(left=0, right=t[-1])
-    ax1.set_xlabel(r"Time ($s$)")
+    ax.set_xlim(left=0, right=t[-1])
+    ax.set_xlabel(r"Time ($s$)")
 
     fig.tight_layout()
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
