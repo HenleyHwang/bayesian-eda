@@ -48,7 +48,7 @@ class BayesianEDA:
         self.tolerance_theta = tolerance_theta
         self.tolerance_input = tolerance_input
 
-    def fit(self, theta0: np.ndarray, x0: np.ndarray, y: SignalData):
+    def __call__(self, theta0: np.ndarray, x0: np.ndarray, y: SignalData):
         # Initialize a new optimization
         self.initialize()
 

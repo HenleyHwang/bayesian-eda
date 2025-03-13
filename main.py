@@ -79,7 +79,7 @@ for _, row in datalist.iterrows():
         tolerance_theta=0.01,
         tolerance_input=0.01,
     )
-    theta_log, x_log, u_log = optimizer.fit(theta0=tau_0, x0=x0, y=y_obs)
+    theta_log, x_log, u_log = optimizer(theta0=tau_0, x0=x0, y=y_obs)
 
     # Save results
     results = {
