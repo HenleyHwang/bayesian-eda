@@ -66,7 +66,7 @@ if __name__ == "__main__":
     for phase in phases:
         n_ID = ((datalist["status"] == "included") & (datalist["phase"] == phase) & (datalist["group"] == "ID")).sum()
         n_GS = ((datalist["status"] == "included") & (datalist["phase"] == phase) & (datalist["group"] == "GS")).sum()
-        rows.append({"phase": phase, "ID": n_ID, "GS": n_GS})
+        rows.append({"phase": phase_names[phase], "ID": n_ID, "GS": n_GS})
     df_n_subjects = pd.DataFrame(rows, columns=["phase", "ID", "GS"])
     df_n_subjects.to_csv(os.path.join(save_path, "n_subjects.csv"), index=False)
 
