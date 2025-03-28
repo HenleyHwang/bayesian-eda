@@ -121,8 +121,9 @@ if __name__ == "__main__":
             plt.figure(figsize=(3, 3))
             plt.boxplot([ID_feature, GS_feature], tick_labels=["ID", "GS"])
             plt.ylabel(f"{symbols[feature]} ({units[feature]})")
-            plt.title(f"Box Plot of {symbols[feature]} in {phase_names[phase]} Phase")
-            plt.savefig(os.path.join(save_path, f"{feature}_{phase}.pdf"), bbox_inches="tight")
+            plt.title(f"{symbols[feature]} in {phase_names[phase]} Phase")
+            plt.subplots_adjust(left=0.25)
+            plt.savefig(os.path.join(save_path, f"{feature}_{phase}.pdf"))
             plt.close()
 
     # Features for each phase

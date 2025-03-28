@@ -8,11 +8,42 @@ plt.rcParams["font.serif"] = ["cm"]
 plt.rcParams["font.size"] = 12
 
 
+def create_subplots(nrows) -> tuple[plt.Figure, list[plt.Axes]]:
+    # Subplot size
+    width, height = 5, 2  # inches
+
+    # Figure margins
+    left, right = 0.7, 0.7  # inches
+    top, bottom = 0.3, 0.6  # inches
+
+    # Vertical space before subplots
+    vspace = 0.2  # inches
+
+    # Create figure with margins
+    fig_height = nrows * height + top + bottom  # inches
+    fig_width = width + left + right  # inches
+    fig = plt.figure(figsize=(fig_width, fig_height))
+
+    # Create axes with shared x
+    axes = []
+    for i in range(nrows):
+        ax_left = left / fig_width  # fraction
+        ax_bottom = (fig_height - top - (i + 1) * height) / fig_height  # fraction
+        ax_width = (fig_width - right - left) / fig_width  # fraction
+        ax_height = (height - vspace) / fig_height  # fraction
+        sharex = axes[0] if axes else None
+        ax = fig.add_axes([ax_left, ax_bottom, ax_width, ax_height], sharex=sharex)
+        if i < nrows - 1:
+            ax.tick_params(labelbottom=False)
+        axes.append(ax)
+    return fig, axes
+
+
 def plot_results(title, save_path, tau_r, tau_f, tau_s, t, y_obs, phasic, tonic, u, u_obs=None):
-    fig, ax = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
+    fig, ax = create_subplots(2)
 
     # Set title
-    fig.suptitle(f"{title}\n" + rf"($\tau_r = {tau_r:.2f}$, $\tau_f = {tau_f:.2f}$, $\tau_s = {tau_s:.2f}$)")
+    ax[0].set_title(f"{title}\n" + rf"($\tau_r = {tau_r:.2f}$, $\tau_f = {tau_f:.2f}$, $\tau_s = {tau_s:.2f}$)")
 
     # Plot y_obs, y_pred, and y_tonic
     ax[0].plot(t, y_obs, label=r"$y(t)$", color="black", linestyle=" ", marker=".")
@@ -43,14 +74,14 @@ def plot_results(title, save_path, tau_r, tau_f, tau_s, t, y_obs, phasic, tonic,
     ax[1].set_xlim(left=0, right=t[-1])
     ax[1].set_xlabel(r"Time ($s$)")
 
-    fig.tight_layout()
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    fig.savefig(save_path, bbox_inches="tight")
+    fig.savefig(save_path)
     plt.close(fig)
 
 
 def plot_activations(title, save_path, tau_r, tau_f, tau_s, t, y_obs, u):
-    fig, ax = plt.subplots(1, 1, figsize=(6, 3), sharex=True)
+    fig, axes = create_subplots(1)
+    ax = axes[0]
 
     # Set title
     ax.set_title(f"{title}\n" + rf"($\tau_r = {tau_r:.2f}$, $\tau_f = {tau_f:.2f}$, $\tau_s = {tau_s:.2f}$)")
@@ -74,9 +105,8 @@ def plot_activations(title, save_path, tau_r, tau_f, tau_s, t, y_obs, u):
     ax.set_xlim(left=0, right=t[-1])
     ax.set_xlabel(r"Time ($s$)")
 
-    fig.tight_layout()
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    fig.savefig(save_path, bbox_inches="tight")
+    fig.savefig(save_path)
     plt.close(fig)
 
 
