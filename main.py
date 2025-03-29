@@ -100,15 +100,15 @@ for _, row in datalist.iterrows():
     _fig_save_path = save_path_fig.format(subject=subject, phase=phase)
     os.makedirs(os.path.dirname(_fig_save_path), exist_ok=True)
     plot_results(
-        title=f"{subject} {phase}",
-        save_path=_fig_save_path,
-        tau_r=results["tau_r"],
-        tau_f=results["tau_f"],
-        tau_s=results["tau_s"],
         t=results["t"],
         y_obs=results["y_obs"],
         phasic=results["phasic"],
         tonic=results["tonic"],
         u=results["u"],
+        tau_r=results["tau_r"],
+        tau_f=results["tau_f"],
+        tau_s=results["tau_s"],
         u_obs=None,  # Don't plot u_obs
+        title=f"{subject} {phase}",
+        save_path=_fig_save_path,
     )

@@ -89,7 +89,7 @@ if __name__ == "__main__":
             tau_f = result["tau_f"].item()
             tau_s = result["tau_s"].item()
 
-            u = result["u"].flatten()
+            u = result["u"].squeeze(0)
             u_pos = u[u > 0]
             u_num = len(u_pos)
             u_bar = np.mean(u_pos) if u_num > 0 else 0

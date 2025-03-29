@@ -9,6 +9,10 @@ plt.rcParams["font.size"] = 12
 
 
 def create_subplots(nrows) -> tuple[plt.Figure, list[plt.Axes]]:
+    """
+    Create subplots with specific size.
+    """
+
     # Subplot size
     width, height = 5, 2  # inches
 
@@ -39,107 +43,143 @@ def create_subplots(nrows) -> tuple[plt.Figure, list[plt.Axes]]:
     return fig, axes
 
 
-def plot_results(title, save_path, tau_r, tau_f, tau_s, t, y_obs, phasic, tonic, u, u_obs=None):
-    fig, ax = create_subplots(2)
-
-    # Set title
-    ax[0].set_title(f"{title}\n" + rf"($\tau_r = {tau_r:.2f}$, $\tau_f = {tau_f:.2f}$, $\tau_s = {tau_s:.2f}$)")
-
-    # Plot y_obs, y_pred, and y_tonic
-    ax[0].plot(t, y_obs, label=r"$y(t)$", color="black", linestyle=" ", marker=".")
-    ax[0].plot(t, phasic + tonic, label=r"$y_T(t)+y_P(t)$", color="orange", linestyle="-")
-    ax[0].plot(t, tonic, label=r"$y_T(t)$", color="blue", linestyle="-")
-    ax[0].set_ylim(bottom=0, top=1.1 * max(y_obs))
-    ax[0].set_ylabel(r"SC ($\mu S$)")
-    ax[0].grid()
-    ax[0].legend(loc="lower right")
-
-    # Plot y_phasic
-    ax[1].plot(t, phasic, label=r"$y_P(t)$", color="blue", linestyle="-")
-    ax[1].set_ylim(bottom=0, top=1.1 * max(phasic))
-    ax[1].set_ylabel(r"Phasic SC ($\mu S$)")
-    ax[1].grid()
-    # Plot u
-    ax1 = ax[1].twinx()
-    if u_obs is not None:
-        ax1.vlines(t, 0, (u_obs > 0) * 1.1 * max(u), label=r"CS", color="gray", linewidth=2, alpha=0.5)
-    ax1.stem(t, u, label=r"$u(t)$", linefmt="red", basefmt=" ", markerfmt=" ")
-    ax1.set_ylim(bottom=0, top=max(1.1 * max(u), 1))
-    ax1.set_ylabel(r"ANS Activations ($\mu S/s$)")
-    lines, labels = ax[1].get_legend_handles_labels()
-    lines2, labels2 = ax1.get_legend_handles_labels()
-    ax1.legend(lines + lines2, labels + labels2, loc="upper right")
-
-    # Set x-axis
-    ax[1].set_xlim(left=0, right=t[-1])
-    ax[1].set_xlabel(r"Time ($s$)")
-
+def save_figure(fig: plt.Figure, save_path):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     fig.savefig(save_path)
-    plt.close(fig)
 
 
-def plot_activations(title, save_path, tau_r, tau_f, tau_s, t, y_obs, u):
+def combine_legends(*axes: plt.Axes, loc="upper right"):
+    all_lines, all_labels = [], []
+    for ax in axes:
+        lines, labels = ax.get_legend_handles_labels()
+        all_lines.extend(lines)
+        all_labels.extend(labels)
+        ax.legend().remove()
+    axes[-1].legend(all_lines, all_labels, loc=loc)
+
+
+def twinx(plot):
+    def _plot(ax: plt.Axes, *args, **kwargs):
+        ax1 = ax.twinx()
+        plot(ax1, *args, **kwargs)
+        ax1.grid(False)
+        ax1.set_title("")
+        combine_legends(ax, ax1)
+        return ax1
+
+    return _plot
+
+
+def plot_measurements(ax: plt.Axes, t, y_obs, phasic=None, tonic=None):
+    ax.plot(t, y_obs, label=r"$y$", color="black", linestyle=" ", marker=".")
+    if tonic is not None:
+        if phasic is not None:
+            ax.plot(t, phasic + tonic, label=r"$y_T+y_P$", color="orange", linestyle="-")
+        ax.plot(t, tonic, label=r"$y_T$", color="blue", linestyle="-")
+    ax.set_ylim(bottom=0)
+    ax.set_ylabel(r"SC ($\mu S$)")
+    ax.grid()
+    ax.legend(loc="lower right")
+
+
+def plot_phasic(ax: plt.Axes, t, phasic):
+    ax.plot(t, phasic, label=r"$y_P$", color="blue", linestyle="-")
+    ax.set_ylim(bottom=0)
+    ax.set_ylabel(r"Phasic SC ($\mu S$)")
+    ax.grid()
+    ax.legend(loc="upper right")
+
+
+def plot_activations(ax: plt.Axes, t, u, u_obs=None):
+    if u_obs is not None:
+        ax.vlines(t, 0, (u_obs > 0) * 1.1 * max(u), label=r"CS", color="gray", linewidth=2, alpha=0.5)
+    ax.stem(t, u, label=r"$u$", linefmt="red", basefmt=" ", markerfmt=" ")
+    ax.set_ylim(bottom=0)
+    ax.set_ylabel(r"ANS Activation ($\mu S/s$)")
+    ax.grid()
+    ax.legend(loc="upper right")
+
+
+def plot_time(ax: plt.Axes, t):
+    ax.set_xlim(left=t[0], right=t[-1])
+    ax.set_xlabel(r"Time ($s$)")
+
+
+def plot_title(ax: plt.Axes, tau_r, tau_f, tau_s, title=None):
+    _title = rf"($\tau_r = {tau_r:.2f}$, $\tau_f = {tau_f:.2f}$, $\tau_s = {tau_s:.2f}$)"
+    if title is not None:
+        _title = f"{title}\n" + _title
+    ax.set_title(_title)
+
+
+def plot_results(t, y_obs, phasic, tonic, u, tau_r, tau_f, tau_s, u_obs=None, title=None, save_path=None):
+    fig, axes = create_subplots(2)
+
+    plot_measurements(axes[0], t, y_obs, phasic=phasic, tonic=tonic)
+    plot_phasic(axes[1], t, phasic)
+    twinx(plot_activations)(axes[1], t, u, u_obs=u_obs)
+    plot_time(axes[1], t)
+    plot_title(axes[0], tau_r, tau_f, tau_s, title=title)
+
+    if save_path is not None:
+        save_figure(fig, save_path)
+        plt.close(fig)
+    else:
+        return fig, axes
+
+
+def plot_results_activations_only(t, y_obs, u, tau_r, tau_f, tau_s, title=None, save_path=None):
     fig, axes = create_subplots(1)
     ax = axes[0]
 
-    # Set title
-    ax.set_title(f"{title}\n" + rf"($\tau_r = {tau_r:.2f}$, $\tau_f = {tau_f:.2f}$, $\tau_s = {tau_s:.2f}$)")
+    plot_measurements(ax, t, y_obs)
+    twinx(plot_activations)(ax, t, u)
+    plot_time(ax, t)
+    plot_title(ax, tau_r, tau_f, tau_s, title=title)
 
-    # Plot y_obs
-    ax.plot(t, y_obs, label=r"$y(t)$", color="black", linestyle=" ", marker=".")
-    ax.set_ylim(bottom=0, top=1.1 * max(y_obs))
-    ax.set_ylabel(r"SC ($\mu S$)")
-    ax.grid()
-
-    # Plot u
-    ax1 = ax.twinx()
-    ax1.stem(t, u, label=r"$u(t)$", linefmt="red", basefmt=" ", markerfmt=" ")
-    ax1.set_ylim(bottom=0, top=max(1.1 * max(u), 1))
-    ax1.set_ylabel(r"ANS Activations ($\mu S/s$)")
-    lines, labels = ax.get_legend_handles_labels()
-    lines2, labels2 = ax1.get_legend_handles_labels()
-    ax.legend(lines + lines2, labels + labels2, loc="upper right")
-
-    # Set x-axis
-    ax.set_xlim(left=0, right=t[-1])
-    ax.set_xlabel(r"Time ($s$)")
-
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    fig.savefig(save_path)
-    plt.close(fig)
+    if save_path is not None:
+        save_figure(fig, save_path)
+        plt.close(fig)
+    else:
+        return fig, axes
 
 
 if __name__ == "__main__":
     from scipy.io import loadmat
 
-    exp_name = "best"
-    load_path = f"results/log/{exp_name}/{{subject}}_{{phase}}.mat"
+    def save_results(load_path, save_path, subject_phase_list, activations_only=False):
+        for subject, phase, title, filename in subject_phase_list:
+            # Load result
+            _load_path = load_path.format(subject=subject, phase=phase)
+            result = loadmat(_load_path)
+            t = result["t"].squeeze(0)
+            y_obs = result["y_obs"].squeeze(0)
+            phasic = result["phasic"].squeeze(0)
+            tonic = result["tonic"].squeeze(0)
+            u = result["u"].squeeze(0)
+            tau_r = result["tau_r"].item()
+            tau_f = result["tau_f"].item()
+            tau_s = result["tau_s"].item()
+
+            # Plot
+            _save_path = save_path.format(filename=filename)
+            if not activations_only:
+                plot_results(t, y_obs, phasic, tonic, u, tau_r, tau_f, tau_s, title=title, save_path=_save_path)
+            else:
+                plot_results_activations_only(t, y_obs, u, tau_r, tau_f, tau_s, title=title, save_path=_save_path)
 
     # Plot full deconvolution results
-    save_path = "results/paper/plots/{filename}_deconvolution.pdf"
     subject_phase_list = [
         ("4IIAPOJ_189", "cond", r"\textbf{ID} Participant 1 in \textbf{Conditioning} Phase", "id_1_cond")
     ]
-    for subject, phase, title, filename in subject_phase_list:
-        # Load result
-        _load_path = load_path.format(subject=subject, phase=phase)
-        result = loadmat(_load_path)
-        tau_r = result["tau_r"].item()
-        tau_f = result["tau_f"].item()
-        tau_s = result["tau_s"].item()
-        t = result["t"].flatten()
-        y_obs = result["y_obs"].flatten()
-        phasic = result["phasic"].flatten()
-        tonic = result["tonic"].flatten()
-        u = result["u"].flatten()
-
-        # Plot
-        _save_path = save_path.format(filename=filename)
-        plot_results(title, _save_path, tau_r, tau_f, tau_s, t, y_obs, phasic, tonic, u)
+    save_results(
+        load_path="results/log/best/{subject}_{phase}.mat",
+        save_path="results/paper/plots/{filename}_deconvolution.pdf",
+        subject_phase_list=subject_phase_list,
+        activations_only=False,
+    )
 
     # Plot activations only
-    save_path_u = "results/paper/plots/{filename}_activations.pdf"
     subject_phase_list = [
         ("4IIAPOJ_189", "cond", r"\textbf{ID} Participant 1 in \textbf{Conditioning} Phase", "id_1_cond"),
         ("4IIAPOJ_189", "ext", r"\textbf{ID} Participant 1 in \textbf{Extinction} Phase", "id_1_ext"),
@@ -148,17 +188,9 @@ if __name__ == "__main__":
         ("2INISAM_194", "ext", r"\textbf{GS} Participant 1 in \textbf{Extinction} Phase", "gs_1_ext"),
         ("2INISAM_194", "recall", r"\textbf{GS} Participant 1 in \textbf{Recall} Phase", "gs_1_recall"),
     ]
-    for subject, phase, title, filename in subject_phase_list:
-        # Load result
-        _load_path = load_path.format(subject=subject, phase=phase)
-        result = loadmat(_load_path)
-        tau_r = result["tau_r"].item()
-        tau_f = result["tau_f"].item()
-        tau_s = result["tau_s"].item()
-        t = result["t"].flatten()
-        y_obs = result["y_obs"].flatten()
-        u = result["u"].flatten()
-
-        # Plot
-        _save_path_u = save_path_u.format(filename=filename)
-        plot_activations(title, _save_path_u, tau_r, tau_f, tau_s, t, y_obs, u)
+    save_results(
+        load_path="results/log/best/{subject}_{phase}.mat",
+        save_path="results/paper/plots/{filename}_activations.pdf",
+        subject_phase_list=subject_phase_list,
+        activations_only=True,
+    )
