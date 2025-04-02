@@ -79,7 +79,7 @@ def plot_measurements(ax: plt.Axes, t, y_obs, phasic=None, tonic=None):
     ax.set_ylim(bottom=0)
     ax.set_ylabel(r"SC ($\mu S$)")
     ax.grid()
-    ax.legend(loc="lower right")
+    ax.legend(loc="upper right")
 
 
 def plot_phasic(ax: plt.Axes, t, phasic):
@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
     # Plot full deconvolution results
     subject_phase_list = [
-        ("4IIAPOJ_189", "cond", r"\textbf{ID} Participant 1 in \textbf{Conditioning} Phase", "id_1_cond")
+        ("4IIAPOJ_189", "ext", r"\textbf{ID} Participant 1 in \textbf{Extinction} Phase", "id_1_ext"),
     ]
     save_results(
         load_path="results/log/best/{subject}_{phase}.mat",
@@ -184,9 +184,9 @@ if __name__ == "__main__":
         ("4IIAPOJ_189", "cond", r"\textbf{ID} Participant 1 in \textbf{Conditioning} Phase", "id_1_cond"),
         ("4IIAPOJ_189", "ext", r"\textbf{ID} Participant 1 in \textbf{Extinction} Phase", "id_1_ext"),
         ("4IIAPOJ_189", "recall", r"\textbf{ID} Participant 1 in \textbf{Recall} Phase", "id_1_recall"),
-        ("2INISAM_194", "cond", r"\textbf{GS} Participant 1 in \textbf{Conditioning} Phase", "gs_1_cond"),
-        ("2INISAM_194", "ext", r"\textbf{GS} Participant 1 in \textbf{Extinction} Phase", "gs_1_ext"),
-        ("2INISAM_194", "recall", r"\textbf{GS} Participant 1 in \textbf{Recall} Phase", "gs_1_recall"),
+        ("4INOVAJ_167", "cond", r"\textbf{GS} Participant 1 in \textbf{Conditioning} Phase", "gs_1_cond"),
+        ("4INOVAJ_167", "ext", r"\textbf{GS} Participant 1 in \textbf{Extinction} Phase", "gs_1_ext"),
+        ("4INOVAJ_167", "recall", r"\textbf{GS} Participant 1 in \textbf{Recall} Phase", "gs_1_recall"),
     ]
     save_results(
         load_path="results/log/best/{subject}_{phase}.mat",
