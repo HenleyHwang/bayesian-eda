@@ -1,6 +1,9 @@
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from scipy.io import loadmat
 
 plt.rcParams["text.usetex"] = True
 plt.rcParams["font.family"] = "serif"
@@ -145,52 +148,60 @@ def plot_results_activations_only(t, y_obs, u, tau_r, tau_f, tau_s, title=None, 
 
 
 if __name__ == "__main__":
-    from scipy.io import loadmat
+    exp_name = "best"
+    load_path = f"results/log/{exp_name}/{{subject}}_{{phase}}.mat"
+    save_path = f"results/paper/plots"
 
-    def save_results(load_path, save_path, subject_phase_list, activations_only=False):
-        for subject, phase, title, filename in subject_phase_list:
-            # Load result
-            _load_path = load_path.format(subject=subject, phase=phase)
-            result = loadmat(_load_path)
-            t = result["t"].squeeze(0)
-            y_obs = result["y_obs"].squeeze(0)
-            phasic = result["phasic"].squeeze(0)
-            tonic = result["tonic"].squeeze(0)
-            u = result["u"].squeeze(0)
-            tau_r = result["tau_r"].item()
-            tau_f = result["tau_f"].item()
-            tau_s = result["tau_s"].item()
+    os.makedirs(save_path, exist_ok=True)
 
-            # Plot
-            _save_path = save_path.format(filename=filename)
-            if not activations_only:
-                plot_results(t, y_obs, phasic, tonic, u, tau_r, tau_f, tau_s, title=title, save_path=_save_path)
-            else:
-                plot_results_activations_only(t, y_obs, u, tau_r, tau_f, tau_s, title=title, save_path=_save_path)
+    # Dictionary for display
+    phase_names = {
+        "cond": "Conditioning",
+        "ext": "Extinction",
+        "recall": "Recall",
+    }
 
-    # Plot full deconvolution results
-    subject_phase_list = [
-        ("4IIAPOJ_189", "ext", r"\textbf{ID} Participant 1 in \textbf{Extinction} Phase", "id_1_ext"),
-    ]
-    save_results(
-        load_path="results/log/best/{subject}_{phase}.mat",
-        save_path="results/paper/plots/{filename}_deconvolution.pdf",
-        subject_phase_list=subject_phase_list,
-        activations_only=False,
-    )
+    # Get the list of subjects and phases
+    datalist_path = "../data/datalist.csv"
+    with open(datalist_path, "r") as f:
+        datalist = pd.read_csv(f)
+    datalist = datalist[datalist["group"].isin(["ID", "GS"])]
+    datalist = datalist[datalist["status"] == "included"]
 
-    # Plot activations only
-    subject_phase_list = [
-        ("4IIAPOJ_189", "cond", r"\textbf{ID} Participant 1 in \textbf{Conditioning} Phase", "id_1_cond"),
-        ("4IIAPOJ_189", "ext", r"\textbf{ID} Participant 1 in \textbf{Extinction} Phase", "id_1_ext"),
-        ("4IIAPOJ_189", "recall", r"\textbf{ID} Participant 1 in \textbf{Recall} Phase", "id_1_recall"),
-        ("4INOVAJ_167", "cond", r"\textbf{GS} Participant 1 in \textbf{Conditioning} Phase", "gs_1_cond"),
-        ("4INOVAJ_167", "ext", r"\textbf{GS} Participant 1 in \textbf{Extinction} Phase", "gs_1_ext"),
-        ("4INOVAJ_167", "recall", r"\textbf{GS} Participant 1 in \textbf{Recall} Phase", "gs_1_recall"),
-    ]
-    save_results(
-        load_path="results/log/best/{subject}_{phase}.mat",
-        save_path="results/paper/plots/{filename}_activations.pdf",
-        subject_phase_list=subject_phase_list,
-        activations_only=True,
-    )
+    # Exclude over-stimulated subjects
+    def over_stimulated(row):
+        result = loadmat(load_path.format(subject=row["subject"], phase=row["phase"]))
+        return np.sum(result["u_obs"] > 0) > 50
+
+    datalist = datalist[~datalist.apply(over_stimulated, axis=1)]
+
+    # Main loop
+    for _, row in datalist.iterrows():
+        subject_id = row["subject_id"]
+        subject = row["subject"]
+        phase = row["phase"]
+        group = row["group"]
+
+        # Load result
+        _load_path = load_path.format(subject=subject, phase=phase)
+        result = loadmat(_load_path)
+
+        t = result["t"].squeeze(0)
+        y_obs = result["y_obs"].squeeze(0)
+        phasic = result["phasic"].squeeze(0)
+        tonic = result["tonic"].squeeze(0)
+        u = result["u"].squeeze(0)
+        tau_r = result["tau_r"].item()
+        tau_f = result["tau_f"].item()
+        tau_s = result["tau_s"].item()
+
+        # Plot
+        phase_name = phase_names[phase]
+        title = f"Subject {subject_id}, Group: \\textbf{{{group}}}, Phase: \\textbf{{{phase_name}}}"
+        filename = f"{subject_id}_{phase}_{group.lower()}"
+
+        _save_path = os.path.join(save_path, f"{filename}_deconvolution.pdf")
+        plot_results(t, y_obs, phasic, tonic, u, tau_r, tau_f, tau_s, title=title, save_path=_save_path)
+
+        _save_path = os.path.join(save_path, f"{filename}_activations.pdf")
+        plot_results_activations_only(t, y_obs, u, tau_r, tau_f, tau_s, title=title, save_path=_save_path)

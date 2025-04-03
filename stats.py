@@ -17,8 +17,8 @@ plt.rcParams["font.size"] = 12
 if __name__ == "__main__":
     exp_name = "best"
     load_path = f"results/log/{exp_name}/{{subject}}_{{phase}}.mat"
-
     save_path = f"results/paper/stats"
+
     os.makedirs(save_path, exist_ok=True)
 
     # Dictionary for display
@@ -50,13 +50,13 @@ if __name__ == "__main__":
 
     # Exclude over-stimulated subjects
     def over_stimulated(row):
-        if row["status"] != "included":
-            return
-        result = loadmat(load_path.format(subject=row["subject"], phase=row["phase"]))
-        if np.sum(result["u_obs"] > 0) > 50:
-            row["status"] = "excluded"
+        if row["status"] == "included":
+            result = loadmat(load_path.format(subject=row["subject"], phase=row["phase"]))
+            if np.sum(result["u_obs"] > 0) > 50:
+                row["status"] = "excluded"
+        return row
 
-    datalist.apply(over_stimulated, axis=1)
+    datalist = datalist.apply(over_stimulated, axis=1)
 
     # Get the list of phases
     phases = datalist["phase"].unique()
@@ -85,11 +85,11 @@ if __name__ == "__main__":
             _load_path = load_path.format(subject=subject, phase=phase)
             result = loadmat(_load_path)
 
+            u = result["u"].squeeze(0)
             tau_r = result["tau_r"].item()
             tau_f = result["tau_f"].item()
             tau_s = result["tau_s"].item()
 
-            u = result["u"].squeeze(0)
             u_pos = u[u > 0]
             u_num = len(u_pos)
             u_bar = np.mean(u_pos) if u_num > 0 else 0
