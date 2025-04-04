@@ -198,7 +198,7 @@ if __name__ == "__main__":
         # Plot
         phase_name = phase_names[phase]
         title = f"Subject {subject_id}, Group: \\textbf{{{group}}}, Phase: \\textbf{{{phase_name}}}"
-        filename = f"{subject_id}_{phase}_{group.lower()}"
+        filename = f"{subject_id}_{phase}"
 
         _save_path = os.path.join(save_path, f"{filename}_deconvolution.pdf")
         plot_results(t, y_obs, phasic, tonic, u, tau_r, tau_f, tau_s, title=title, save_path=_save_path)
