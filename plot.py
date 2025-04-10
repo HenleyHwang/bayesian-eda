@@ -77,7 +77,7 @@ def plot_measurements(ax: plt.Axes, t, y_obs, phasic=None, tonic=None):
     ax.plot(t, y_obs, label=r"$y$", color="black", linestyle=" ", marker=".")
     if tonic is not None:
         if phasic is not None:
-            ax.plot(t, phasic + tonic, label=r"$y_T+y_P$", color="orange", linestyle="-")
+            ax.plot(t, phasic + tonic, label=r"$y_P+y_T$", color="orange", linestyle="-")
         ax.plot(t, tonic, label=r"$y_T$", color="blue", linestyle="-")
     ax.set_ylim(bottom=0)
     ax.set_ylabel(r"SC ($\mu S$)")
@@ -109,7 +109,7 @@ def plot_time(ax: plt.Axes, t):
 
 
 def plot_title(ax: plt.Axes, tau_r, tau_f, tau_s, title=None):
-    _title = rf"($\tau_r = {tau_r:.2f}$, $\tau_f = {tau_f:.2f}$, $\tau_s = {tau_s:.2f}$)"
+    _title = rf"($\tau_r = {tau_r:.2f}\,s$, $\tau_f = {tau_f:.2f}\,s$, $\tau_s = {tau_s:.2f}\,s$)"
     if title is not None:
         _title = f"{title}\n" + _title
     ax.set_title(_title)
